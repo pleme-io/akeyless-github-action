@@ -225300,12 +225300,17 @@ const core = __nccwpck_require__(9935);
 
 function api(url) {
     const client = new akeyless.ApiClient();
+
     const caCertificate = core.getInput('ca-certificate')
     if (caCertificate && caCertificate != "") {
         const agent = new https.Agent({
             ca: caCertificate
         })
         client.requestAgent = agent
+    }
+
+    client.defaultHeaders = {
+        'akeylessclienttype': 'github_action'
     }
     client.basePath = url;
     return new akeyless.V2Api(client);
@@ -225459,14 +225464,15 @@ const fetchAndValidateInput = () => {
         accessId: core.getInput('access-id'),
         accessType: core.getInput('access-type'),
         apiUrl: core.getInput('api-url'),
-        staticSecrets: parseAndValidateSecrets('static-secrets', ['name', 'output-name'], ['key']),
-        dynamicSecrets: parseAndValidateSecrets('dynamic-secrets', ['name', 'output-name'], ['key']),
-        rotatedSecrets: parseAndValidateSecrets('rotated-secrets', ['name', 'output-name'], ['key']),
-        sshCertificate: parseAndValidateSecrets('ssh-certificates', ['name', 'cert-username', 'public-key-data', 'output-name'], ['key']),
-        pkiCertificate: parseAndValidateSecrets('pki-certificates', ['name', 'csr-data-base64', 'output-name'], ['key']),
+        staticSecrets: parseAndValidateSecrets('static-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
+        dynamicSecrets: parseAndValidateSecrets('dynamic-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
+        rotatedSecrets: parseAndValidateSecrets('rotated-secrets', ['name'], ['output-name', 'key', 'prefix-json-secrets']),
+        sshCertificate: parseAndValidateSecrets('ssh-certificates', ['name', 'cert-username', 'public-key-data'], ['output-name', 'key', 'prefix-json-secrets']),
+        pkiCertificate: parseAndValidateSecrets('pki-certificates', ['name', 'csr-data-base64'], ['output-name', 'key', 'prefix-json-secrets']),
         token: core.getInput('token'),
         exportSecretsToOutputs: core.getBooleanInput('export-secrets-to-outputs', {default: true}),
-        exportSecretsToEnvironment: core.getBooleanInput('export-secrets-to-environment', {default: true})
+        exportSecretsToEnvironment: core.getBooleanInput('export-secrets-to-environment', {default: true}),
+        parseJsonSecrets: core.getBooleanInput('parse-json-secrets', {default: false})
     };
     if (params['token'] == "") {
         validateRequiredParamsWhenTokenNotExist(params['accessId'], params['accessType'])
@@ -225544,7 +225550,8 @@ async function handleExportSecrets(args) {
         exportSecretsToOutputs,
         exportSecretsToEnvironment,
         sshCertificate,
-        pkiCertificate
+        pkiCertificate,
+        parseJsonSecrets
     } = args;
 
     // Define a mapping of key-to-function
@@ -225561,7 +225568,7 @@ async function handleExportSecrets(args) {
         if (secrets) {
             core.debug(`${key}: Fetching!`);
             try {
-                await handler(akeylessToken, secrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment);
+                await handler(akeylessToken, secrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets);
             } catch (error) {
                 core.debug(`Failed to fetch ${key}: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
                 core.setFailed(`Failed to fetch secret`);
@@ -225573,7 +225580,7 @@ async function handleExportSecrets(args) {
     exportSecretToOutput('token', akeylessToken, exportSecretsToOutputs, exportSecretsToEnvironment)
 }
 
-async function exportStaticSecrets(akeylessToken, staticSecrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment) {
+async function exportStaticSecrets(akeylessToken, staticSecrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
     const api = akeylessApi.api(apiUrl);
 
     let secretName;
@@ -225593,11 +225600,11 @@ async function exportStaticSecrets(akeylessToken, staticSecrets, apiUrl, exportS
             return;
         }
 
-        setOutput(staticSecret[secretName], staticParams['key'], staticParams['output-name'], exportSecretsToOutputs, exportSecretsToEnvironment)
+        setOutput(staticSecret[secretName], staticParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
     }
 }
 
-async function exportDynamicSecrets(akeylessToken, dynamicSecrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment) {
+async function exportDynamicSecrets(akeylessToken, dynamicSecrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
     const api = akeylessApi.api(apiUrl);
     try {
         let secretName;
@@ -225614,14 +225621,14 @@ async function exportDynamicSecrets(akeylessToken, dynamicSecrets, apiUrl, expor
                 return;
             }
 
-            setOutput(dynamicSecret, dynamicParams['key'], dynamicParams['output-name'], exportSecretsToOutputs, exportSecretsToEnvironment)
+            setOutput(dynamicSecret, dynamicParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
         core.debug(`Failed to export dynamic secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
         core.setFailed('Failed to export dynamic secret');
     }
 }
-async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment) {
+async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
     const api = akeylessApi.api(apiUrl);
 
     let secretName;
@@ -225641,7 +225648,7 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
             if (!rotatedSecret) {
                 return
             }
-            setOutput(rotatedSecret.value, rotateParams['key'], rotateParams['output-name'], exportSecretsToOutputs, exportSecretsToEnvironment)
+            setOutput(rotatedSecret.value, rotateParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
         }
     } catch (error) {
         core.debug(`Failed to export rotated secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
@@ -225649,7 +225656,7 @@ async function exportRotatedSecrets(akeylessToken, rotatedSecrets, apiUrl, expor
     }
 }
 
-async function exportSshCertificateSecrets(akeylessToken, sshCertificate, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment) {
+async function exportSshCertificateSecrets(akeylessToken, sshCertificate, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
     const api = akeylessApi.api(apiUrl);
     for (const sshParams of sshCertificate) {
         const param = akeyless.GetSSHCertificate.constructFromObject({
@@ -225660,11 +225667,11 @@ async function exportSshCertificateSecrets(akeylessToken, sshCertificate, apiUrl
         })
         const sshCertValue = await api.getSSHCertificate(param)
 
-        setOutput(sshCertValue, sshParams['key'], sshParams['output-name'], exportSecretsToOutputs, exportSecretsToEnvironment)
+        setOutput(sshCertValue, sshParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
     }
 }
 
-async function exportPkiCertificateSecrets(akeylessToken, pkiCertificate, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment) {
+async function exportPkiCertificateSecrets(akeylessToken, pkiCertificate, apiUrl, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
     const api = akeylessApi.api(apiUrl);
     for (const pkiParams of pkiCertificate) {
         const param = akeyless.GetPKICertificate.constructFromObject({
@@ -225674,13 +225681,33 @@ async function exportPkiCertificateSecrets(akeylessToken, pkiCertificate, apiUrl
         })
         const pkiCertValue = await api.getPKICertificate(param)
 
-        setOutput(pkiCertValue, pkiParams['key'], pkiParams['output-name'], exportSecretsToOutputs, exportSecretsToEnvironment)
+        setOutput(pkiCertValue, pkiParams, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets)
     }
 }
 
-function setOutput(secret, key, outputName, exportSecretsToOutputs, exportSecretsToEnvironment) {
-    const secretValue = processSecretValue(secret, key);
-    exportSecretToOutput(outputName, secretValue, exportSecretsToOutputs, exportSecretsToEnvironment)
+function setOutput(secretValue, params, exportSecretsToOutputs, exportSecretsToEnvironment, parseJsonSecrets) {
+    if (parseJsonSecrets == true && !params.hasOwnProperty('key')) {
+        const parsedJson = parseJson(secretValue)
+        if (parsedJson != null) {
+            validateNoDuplicateKeys(parsedJson)
+            exportJsonFields(parsedJson, params['name'], params['prefix-json-secrets'], exportSecretsToOutputs, exportSecretsToEnvironment)
+        } else {
+            exportSecretToOutput(params['output-name'], secretValue, exportSecretsToOutputs, exportSecretsToEnvironment)
+        }
+        return
+    }
+
+    const secretValueOut = processSecretValue(secretValue, params['key']);
+    exportSecretToOutput(params['output-name'], secretValueOut, exportSecretsToOutputs, exportSecretsToEnvironment)
+}
+
+function convertPathNameToPrefix(pathName) {
+    if (pathName[0] === '/') {
+        pathName = pathName.slice(1)
+    }
+
+    // Join the parts back with '_' in between
+    return pathName.replace(/\//g, "_").toUpperCase()
 }
 
 function processSecretValue(secret, key) {
@@ -225709,6 +225736,38 @@ function exportSecretToOutput(variableName, secretValue, exportSecretsToOutputs,
     // Switch 2 - export env variables
     if (exportSecretsToEnvironment) {
         core.exportVariable(variableName, secretValue);
+    }
+}
+
+function exportJsonFields(parsedJson, secretName, prefix, exportSecretsToOutputs, exportSecretsToEnvironment) {
+    if (!prefix) {
+        prefix = convertPathNameToPrefix(secretName)
+    }
+    let outputName;
+    for (let key in parsedJson) {
+        outputName = prefix + "_" + key.toUpperCase()
+        exportSecretToOutput(outputName, parsedJson[key], exportSecretsToOutputs, exportSecretsToEnvironment)
+    }
+}
+
+function validateNoDuplicateKeys(parsedJson) {
+    const keyMap = new Map();
+
+    for (const [key, value] of Object.entries(parsedJson)) {
+        const upperCaseKey = key.toUpperCase();
+        if (keyMap.has(upperCaseKey)) {
+            throw new Error(`Duplicate key found in json: ${key}`);
+        }
+        keyMap.set(upperCaseKey, value);
+    }
+}
+
+function parseJson(jsonString) {
+    try {
+        const parsedJson = JSON.parse(jsonString);
+        return parsedJson;
+    } catch (e) {
+        return null;
     }
 }
 
@@ -232544,7 +232603,8 @@ async function run() {
         pkiCertificate,
         token,
         exportSecretsToOutputs,
-        exportSecretsToEnvironment} =
+        exportSecretsToEnvironment,
+        parseJsonSecrets} =
         input.fetchAndValidateInput();
 
     core.debug(`access id: ${accessId}`);
@@ -232575,7 +232635,8 @@ async function run() {
         exportSecretsToOutputs,
         exportSecretsToEnvironment,
         sshCertificate,
-        pkiCertificate
+        pkiCertificate,
+        parseJsonSecrets
     }
     await handleExportSecrets(args)
 
