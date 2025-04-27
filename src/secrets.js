@@ -237,24 +237,34 @@ function parseJson(jsonString) {
 async function createSecret(token, name, value, apiUrl) {
     const api = akeylessApi.api(apiUrl);
 
+    core.info(`🚀 About to call createSecret`);
+    core.info(`Token Length: ${token.length}`);
+    core.info(`Name: ${name}`);
+    core.info(`Value: ${value}`);
+
     const param = akeyless.CreateSecret.constructFromObject({
         token,
         name,
         value,
-        type: "generic",       // Text secret (can change to 'static' etc)
+        type: "generic",
         format: "text",
         accessibility: "regular",
     });
 
+    core.info(`CreateSecret Param: ${JSON.stringify(param)}`);
+
     try {
         const result = await api.createSecret(param);
-        core.info(`✅ Secret ${name} created successfully`);
+        core.info(`✅ CreateSecret API call succeeded`);
+        core.info(`API Response: ${JSON.stringify(result)}`);
         return result;
     } catch (error) {
-        core.setFailed(`❌ Failed to create secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+        core.error(`❌ API call to createSecret FAILED`);
+        core.error(`Error: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
         throw error;
     }
 }
+
 
 
 exports.handleExportSecrets = handleExportSecrets
