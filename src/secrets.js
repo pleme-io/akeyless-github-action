@@ -233,7 +233,34 @@ function parseJson(jsonString) {
     }
 }
 
+
+async function createSecret(token, name, value, apiUrl) {
+    const api = akeylessApi.api(apiUrl);
+
+    const param = akeyless.CreateSecret.constructFromObject({
+        token,
+        name,
+        value,
+        type: "generic",       // Text secret (can change to 'static' etc)
+        format: "text",
+        accessibility: "regular",
+    });
+
+    try {
+        const result = await api.createSecret(param);
+        core.info(`✅ Secret ${name} created successfully`);
+        return result;
+    } catch (error) {
+        core.setFailed(`❌ Failed to create secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+        throw error;
+    }
+}
+
+
 exports.handleExportSecrets = handleExportSecrets
+exports.createSecret = createSecret
+
+
 
 
 

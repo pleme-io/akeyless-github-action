@@ -2,11 +2,14 @@ const core = require('@actions/core');
 const { akeylessLogin } = require('./auth')
 const input = require('./input');
 const { handleExportSecrets } = require('./secrets');
+const { handleExportSecrets, createSecret } = require('./secrets');
+
 
 async function run() {
     core.debug(`Getting Input for Akeyless github action`);
 
-    const {accessId,
+    const {
+        accessId,
         accessType,
         apiUrl,
         staticSecrets,
@@ -17,18 +20,18 @@ async function run() {
         token,
         exportSecretsToOutputs,
         exportSecretsToEnvironment,
-        parseJsonSecrets} =
-        input.fetchAndValidateInput();
+        parseJsonSecrets
+    } = input.fetchAndValidateInput();
 
     core.debug(`access id: ${accessId}`);
     core.debug(`Fetch akeyless token with access type ${accessType}`);
 
     let akeylessToken;
     try {
-        if (token != "") {
-            akeylessToken = token
+        if (token !== "") {
+            akeylessToken = token;
         } else {
-            let akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl);
+            const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl);
             akeylessToken = akeylessLoginResponse['token'];
         }
     } catch (error) {
@@ -38,6 +41,19 @@ async function run() {
     }
 
     core.debug(`Akeyless token length: ${akeylessToken.length}`);
+
+    const createSecretName = core.getInput('create-secret-name');
+    const createSecretValue = core.getInput('create-secret-value');
+
+    if (createSecretName && createSecretValue) {
+        core.info(`Creating a new secret in Akeyless: ${createSecretName}`);
+        try {
+            await createSecret(akeylessToken, createSecretName, createSecretValue, apiUrl);
+        } catch (error) {
+            core.setFailed(`Failed to create secret: ${error.message}`);
+            return;
+        }
+    }
 
     const args = {
         akeylessToken,
@@ -50,10 +66,22 @@ async function run() {
         sshCertificate,
         pkiCertificate,
         parseJsonSecrets
-    }
-    await handleExportSecrets(args)
+    };
 
-    core.debug(`done exporting secrets`);
+    await handleExportSecrets(args);
+
+    core.debug(`Done exporting secrets`);
+}
+
+if (require.main === module) {
+    try {
+        core.debug('Starting main run');
+        run();
+    } catch (error) {
+        core.debug(error.stack);
+        core.setFailed('Akeyless action has failed');
+        core.debug(error.message);
+    }
 }
 
 if (require.main === module) {
