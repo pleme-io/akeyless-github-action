@@ -2,6 +2,7 @@ const core = require('@actions/core');
 const akeylessApi = require('./akeyless_api');
 const akeyless = require('akeyless');
 
+
 async function handleExportSecrets(args) {
     const {
         akeylessToken,
@@ -278,7 +279,7 @@ async function handleCreateSecrets(args) {
 
 
 exports.handleExportSecrets = handleExportSecrets
-exports.createSecret = createSecret
+exports.handleCreateSecrets = handleCreateSecrets;
 
 
 
