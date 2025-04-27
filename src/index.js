@@ -3,6 +3,8 @@ const { akeylessLogin } = require('./auth')
 const input = require('./input');
 const { handleExportSecrets } = require('./secrets');
 const { handleExportSecrets, createSecret } = require('./secrets');
+const { createSecret } = require('./secrets'); 
+
 
 
 async function run() {
@@ -42,19 +44,23 @@ async function run() {
 
     core.debug(`Akeyless token length: ${akeylessToken.length}`);
 
+    // ✅ NEW: Read inputs for secret creation
     const createSecretName = core.getInput('create-secret-name');
     const createSecretValue = core.getInput('create-secret-value');
 
+    // ✅ NEW: Create secret if provided
     if (createSecretName && createSecretValue) {
         core.info(`Creating a new secret in Akeyless: ${createSecretName}`);
         try {
             await createSecret(akeylessToken, createSecretName, createSecretValue, apiUrl);
+            core.info(`✅ Secret created successfully`);
         } catch (error) {
-            core.setFailed(`Failed to create secret: ${error.message}`);
+            core.setFailed(`❌ Failed to create secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
             return;
         }
     }
 
+    // ✅ Continue fetching secrets normally
     const args = {
         akeylessToken,
         staticSecrets,
@@ -73,16 +79,7 @@ async function run() {
     core.debug(`Done exporting secrets`);
 }
 
-if (require.main === module) {
-    try {
-        core.debug('Starting main run');
-        run();
-    } catch (error) {
-        core.debug(error.stack);
-        core.setFailed('Akeyless action has failed');
-        core.debug(error.message);
-    }
-}
+
 
 if (require.main === module) {
     try {
