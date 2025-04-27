@@ -234,36 +234,46 @@ function parseJson(jsonString) {
 }
 
 
-async function createSecret(token, name, value, apiUrl) {
+async function handleCreateSecrets(args) {
+    const {
+        akeylessToken,
+        secretsToCreate,
+        apiUrl,
+    } = args;
+
+    if (!secretsToCreate || secretsToCreate.length === 0) {
+        core.info('No secrets to create. Skipping secret creation.');
+        return;
+    }
+
     const api = akeylessApi.api(apiUrl);
 
-    core.info(`🚀 About to call createSecret`);
-    core.info(`Token Length: ${token.length}`);
-    core.info(`Name: ${name}`);
-    core.info(`Value: ${value}`);
+    for (const secret of secretsToCreate) {
+        const { name, value } = secret;
 
-    const param = akeyless.CreateSecret.constructFromObject({
-        token,
-        name,
-        value,
-        type: "generic",
-        format: "text",
-        accessibility: "regular",
-    });
+        if (!name || !value) {
+            core.warning(`Skipping secret creation due to missing name or value: ${JSON.stringify(secret)}`);
+            continue;
+        }
 
-    core.info(`CreateSecret Param: ${JSON.stringify(param)}`);
+        const param = akeyless.CreateSecret.constructFromObject({
+            token: akeylessToken,
+            name,
+            value,
+            type: "generic",
+            format: "text",
+            accessibility: "regular",
+        });
 
-    try {
-        const result = await api.createSecret(param);
-        core.info(`✅ CreateSecret API call succeeded`);
-        core.info(`API Response: ${JSON.stringify(result)}`);
-        return result;
-    } catch (error) {
-        core.error(`❌ API call to createSecret FAILED`);
-        core.error(`Error: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
-        throw error;
+        try {
+            const result = await api.createSecret(param);
+            core.info(`✅ Secret ${name} created successfully`);
+        } catch (error) {
+            core.warning(`❌ Failed to create secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+        }
     }
 }
+
 
 
 

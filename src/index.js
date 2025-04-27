@@ -4,6 +4,7 @@ const input = require('./input');
 const { handleExportSecrets } = require('./secrets');
 const { handleExportSecrets, createSecret } = require('./secrets');
 const { createSecret } = require('./secrets'); 
+const { handleExportSecrets, handleCreateSecrets } = require('./secrets');
 
 
 
@@ -44,23 +45,27 @@ async function run() {
 
     core.debug(`Akeyless token length: ${akeylessToken.length}`);
 
-    // ✅ NEW: Read inputs for secret creation
+    // ✅ Prepare the list of secrets to create
     const createSecretName = core.getInput('create-secret-name');
     const createSecretValue = core.getInput('create-secret-value');
 
-    // ✅ NEW: Create secret if provided
+    const secretsToCreate = [];
+
     if (createSecretName && createSecretValue) {
-        core.info(`Creating a new secret in Akeyless: ${createSecretName}`);
-        try {
-            await createSecret(akeylessToken, createSecretName, createSecretValue, apiUrl);
-            core.info(`✅ Secret created successfully`);
-        } catch (error) {
-            core.setFailed(`❌ Failed to create secret: ${typeof error === 'object' ? JSON.stringify(error) : error}`);
-            return;
-        }
+        secretsToCreate.push({
+            name: createSecretName,
+            value: createSecretValue,
+        });
     }
 
-    // ✅ Continue fetching secrets normally
+    // ✅ Handle secret creation
+    await handleCreateSecrets({
+        akeylessToken,
+        secretsToCreate,
+        apiUrl,
+    });
+
+    // ✅ Then handle fetching secrets
     const args = {
         akeylessToken,
         staticSecrets,
