@@ -73,6 +73,15 @@ inputs:
     description: "Value of the new secret to create"
     required: false
 
+
+  update-secret-name:
+    description: "Name of the existing secret to update"
+    required: false
+  update-secret-value:
+    description: "New value to update the secret with"
+    required: false
+
+
 outputs:
   token:
     description: 'Akeyless Token'

@@ -7,7 +7,7 @@ const { handleExportSecrets, handleCreateSecrets } = require('./secrets');
 
 
 async function run() {
-    core.debug(`Getting Input for Akeyless github action`);
+    core.debug(`Getting Input for Akeyless GitHub Action`);
 
     const {
         accessId,
@@ -24,8 +24,8 @@ async function run() {
         parseJsonSecrets
     } = input.fetchAndValidateInput();
 
-    core.debug(`access id: ${accessId}`);
-    core.debug(`Fetch akeyless token with access type ${accessType}`);
+    core.debug(`Access ID: ${accessId}`);
+    core.debug(`Fetching Akeyless token with access type: ${accessType}`);
 
     let akeylessToken;
     try {
@@ -43,12 +43,11 @@ async function run() {
 
     core.debug(`Akeyless token length: ${akeylessToken.length}`);
 
-    // ✅ Prepare the list of secrets to create
+    // ✅ Prepare list of secrets to create
     const createSecretName = core.getInput('create-secret-name');
     const createSecretValue = core.getInput('create-secret-value');
 
     const secretsToCreate = [];
-
     if (createSecretName && createSecretValue) {
         secretsToCreate.push({
             name: createSecretName,
@@ -56,12 +55,35 @@ async function run() {
         });
     }
 
+    // ✅ Prepare list of secrets to update
+    const updateSecretName = core.getInput('update-secret-name');
+    const updateSecretValue = core.getInput('update-secret-value');
+
+    const secretsToUpdate = [];
+    if (updateSecretName && updateSecretValue) {
+        secretsToUpdate.push({
+            name: updateSecretName,
+            value: updateSecretValue,
+        });
+    }
+
     // ✅ Handle secret creation
-    await handleCreateSecrets({
-        akeylessToken,
-        secretsToCreate,
-        apiUrl,
-    });
+    if (secretsToCreate.length > 0) {
+        await handleCreateSecrets({
+            akeylessToken,
+            secretsToCreate,
+            apiUrl,
+        });
+    }
+
+    // ✅ Handle secret update
+    if (secretsToUpdate.length > 0) {
+        await handleUpdateSecrets({
+            akeylessToken,
+            secretsToUpdate,
+            apiUrl,
+        });
+    }
 
     // ✅ Then handle fetching secrets
     const args = {
@@ -79,8 +101,9 @@ async function run() {
 
     await handleExportSecrets(args);
 
-    core.debug(`Done exporting secrets`);
+    core.debug(`✅ Done processing all secrets`);
 }
+
 
 
 
