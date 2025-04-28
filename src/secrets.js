@@ -234,7 +234,6 @@ function parseJson(jsonString) {
     }
 }
 
-
 async function handleCreateSecrets(args) {
     const {
         akeylessToken,
@@ -274,8 +273,6 @@ async function handleCreateSecrets(args) {
         }
     }
 }
-
-
 
 async function handleUpdateSecrets(args) {
     const {
@@ -318,10 +315,6 @@ async function handleUpdateSecrets(args) {
 }
 
 exports.handleUpdateSecrets = handleUpdateSecrets;
-
-
-
-
 exports.handleExportSecrets = handleExportSecrets
 exports.handleCreateSecrets = handleCreateSecrets;
 

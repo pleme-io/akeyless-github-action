@@ -24,6 +24,14 @@ async function run() {
         parseJsonSecrets
     } = input.fetchAndValidateInput();
 
+     // Prepare list of secrets to create
+     const createSecretName = core.getInput('create-secret-name');
+     const createSecretValue = core.getInput('create-secret-value');
+
+      // Prepare list of secrets to update
+    const updateSecretName = core.getInput('update-secret-name');
+    const updateSecretValue = core.getInput('update-secret-value');
+
     core.debug(`Access ID: ${accessId}`);
     core.debug(`Fetching Akeyless token with access type: ${accessType}`);
 
@@ -41,12 +49,6 @@ async function run() {
         return;
     }
 
-    core.debug(`Akeyless token length: ${akeylessToken.length}`);
-
-    // Prepare list of secrets to create
-    const createSecretName = core.getInput('create-secret-name');
-    const createSecretValue = core.getInput('create-secret-value');
-
     const secretsToCreate = [];
     if (createSecretName && createSecretValue) {
         secretsToCreate.push({
@@ -54,10 +56,6 @@ async function run() {
             value: createSecretValue,
         });
     }
-
-    // Prepare list of secrets to update
-    const updateSecretName = core.getInput('update-secret-name');
-    const updateSecretValue = core.getInput('update-secret-value');
 
     const secretsToUpdate = [];
     if (updateSecretName && updateSecretValue) {
@@ -103,9 +101,6 @@ async function run() {
 
     core.debug(`Done processing all secrets`);
 }
-
-
-
 
 if (require.main === module) {
     try {
