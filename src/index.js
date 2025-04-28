@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const { akeylessLogin } = require('./auth')
 const input = require('./input');
-const { handleExportSecrets, handleCreateSecrets } = require('./secrets');
+const { handleExportSecrets, handleCreateSecrets, handleUpdateSecrets } = require('./secrets');
 
 
 
