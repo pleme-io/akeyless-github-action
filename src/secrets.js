@@ -268,9 +268,9 @@ async function handleCreateSecrets(args) {
 
         try {
             const result = await api.createSecret(param);
-            core.info(`✅ Secret ${name} created successfully`);
+            core.info(`Secret ${name} created successfully`);
         } catch (error) {
-            core.warning(`❌ Failed to create secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+            core.warning(`Failed to create secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
         }
     }
 }
@@ -310,9 +310,9 @@ async function handleUpdateSecrets(args) {
 
         try {
             const result = await api.updateSecretVal(param);
-            core.info(`✅ Secret ${name} updated successfully`);
+            core.info(`Secret ${name} updated successfully`);
         } catch (error) {
-            core.warning(`❌ Failed to update secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
+            core.warning(`Failed to update secret '${name}': ${typeof error === 'object' ? JSON.stringify(error) : error}`);
         }
     }
 }

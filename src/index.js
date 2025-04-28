@@ -43,7 +43,7 @@ async function run() {
 
     core.debug(`Akeyless token length: ${akeylessToken.length}`);
 
-    // ✅ Prepare list of secrets to create
+    // Prepare list of secrets to create
     const createSecretName = core.getInput('create-secret-name');
     const createSecretValue = core.getInput('create-secret-value');
 
@@ -55,7 +55,7 @@ async function run() {
         });
     }
 
-    // ✅ Prepare list of secrets to update
+    // Prepare list of secrets to update
     const updateSecretName = core.getInput('update-secret-name');
     const updateSecretValue = core.getInput('update-secret-value');
 
@@ -67,7 +67,7 @@ async function run() {
         });
     }
 
-    // ✅ Handle secret creation
+    // Handle secret creation
     if (secretsToCreate.length > 0) {
         await handleCreateSecrets({
             akeylessToken,
@@ -76,7 +76,7 @@ async function run() {
         });
     }
 
-    // ✅ Handle secret update
+    // Handle secret update
     if (secretsToUpdate.length > 0) {
         await handleUpdateSecrets({
             akeylessToken,
@@ -85,7 +85,7 @@ async function run() {
         });
     }
 
-    // ✅ Then handle fetching secrets
+    // Then handle fetching secrets
     const args = {
         akeylessToken,
         staticSecrets,
@@ -101,7 +101,7 @@ async function run() {
 
     await handleExportSecrets(args);
 
-    core.debug(`✅ Done processing all secrets`);
+    core.debug(`Done processing all secrets`);
 }
 
 
