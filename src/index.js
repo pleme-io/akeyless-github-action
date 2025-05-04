@@ -21,23 +21,17 @@ async function run() {
         token,
         exportSecretsToOutputs,
         exportSecretsToEnvironment,
-        parseJsonSecrets
+        parseJsonSecrets,
+        secretsToCreate,
+        secretsToUpdate
     } = input.fetchAndValidateInput();
-
-     // Prepare list of secrets to create
-     const createSecretName = core.getInput('create-secret-name');
-     const createSecretValue = core.getInput('create-secret-value');
-
-      // Prepare list of secrets to update
-    const updateSecretName = core.getInput('update-secret-name');
-    const updateSecretValue = core.getInput('update-secret-value');
 
     core.debug(`Access ID: ${accessId}`);
     core.debug(`Fetching Akeyless token with access type: ${accessType}`);
 
     let akeylessToken;
     try {
-        if (token !== "") {
+        if (token !== '') {
             akeylessToken = token;
         } else {
             const akeylessLoginResponse = await akeylessLogin(accessId, accessType, apiUrl);
@@ -49,23 +43,6 @@ async function run() {
         return;
     }
 
-    const secretsToCreate = [];
-    if (createSecretName && createSecretValue) {
-        secretsToCreate.push({
-            name: createSecretName,
-            value: createSecretValue,
-        });
-    }
-
-    const secretsToUpdate = [];
-    if (updateSecretName && updateSecretValue) {
-        secretsToUpdate.push({
-            name: updateSecretName,
-            value: updateSecretValue,
-        });
-    }
-
-    // Handle secret creation
     if (secretsToCreate.length > 0) {
         await handleCreateSecrets({
             akeylessToken,
@@ -74,7 +51,6 @@ async function run() {
         });
     }
 
-    // Handle secret update
     if (secretsToUpdate.length > 0) {
         await handleUpdateSecrets({
             akeylessToken,
@@ -83,7 +59,6 @@ async function run() {
         });
     }
 
-    // Then handle fetching secrets
     const args = {
         akeylessToken,
         staticSecrets,
