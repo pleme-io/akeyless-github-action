@@ -1,0 +1,5 @@
+# Akeyless-Github-Action
+
+> **★★★ CSE / Knowable Construction.** This repo operates under **Constructive Substrate Engineering** — canonical specification at [`pleme-io/theory/CONSTRUCTIVE-SUBSTRATE-ENGINEERING.md`](https://github.com/pleme-io/theory/blob/main/CONSTRUCTIVE-SUBSTRATE-ENGINEERING.md). The Compounding Directive (operational rules: solve once, load-bearing fixes only, idiom-first, models stay current, direction beats velocity) is in the org-level pleme-io/CLAUDE.md ★★★ section. Read both before non-trivial changes.
+
+- [Introduction](#introduction) - [Before Adding Akeyless GitHub Action](#before-adding-akeyless-github-action) - [Inputs](#inputs) - [Outputs](#outputs) - [Default Outputs](#default-outputs) - [Extracting from json by field name](#extracting-from-json-by-field-name) - [Debugging](#debugging) - [Examples](#examples) - [Static Secrets Demo](#static-secrets-demo) - [Dynamic Secrets Demo](#dynamic-secrets-demo) - [Rotated Secrets Demo](#rotated-secrets-demo) - [SSH Certificates Demo](#ssh-certificates-demo)
